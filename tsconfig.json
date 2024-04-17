@@ -1,0 +1,9 @@
+{
+  "extends": "@lukasbach/tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "lib/cjs",
+    "noImplicitAny": false
+  },
+  "exclude": ["src/stories", "**/*.spec.*", "test"],
+  "include": ["src"]
+}
