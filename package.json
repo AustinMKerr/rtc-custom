@@ -13,7 +13,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git@github.com:lukasbach/react-complex-tree.git",
+    "url": "git@github.com:AustinMKerr/rtc-custom.git",
     "directory": "packages/core"
   },
   "description": "Unopinionated Accessible Tree Component with Multi-Select and Drag-And-Drop",
@@ -53,7 +53,6 @@
     "react": ">=16.0.0"
   },
   "scripts": {
-    "prepare": "npm run build",
     "build": "run-p \"build:*\"",
     "build:cjs": "tsc -m commonjs --outDir lib/cjs",
     "build:esm": "tsc -m es2015 --outDir lib/esm",
