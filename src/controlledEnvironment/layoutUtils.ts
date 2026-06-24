@@ -10,14 +10,12 @@ export const computeItemHeight = (treeId: string) => {
 export const computeItemHeightArray = (treeId: string): number[] => {
   const document = getDocument();
   if (!document) {
-    console.log("Document not found");
     return [];
   }
-  const items = document.querySelectorAll<HTMLElement>(`[data-rct-tree="${treeId}"] [data-rct-item-container="true"]`);
-  const itemHeights = Array.from(items).map(item => item.offsetHeight);
-
-  console.log({ itemHeights });
-  return itemHeights;
+  const items = document.querySelectorAll<HTMLElement>(
+    `[data-rct-tree="${treeId}"] [data-rct-item-container="true"]`
+  );
+  return Array.from(items).map(item => item.offsetHeight);
 };
 
 export const isOutsideOfContainer = (e: DragEvent, treeBb: DOMRect) =>

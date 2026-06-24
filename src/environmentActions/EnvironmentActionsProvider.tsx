@@ -35,7 +35,7 @@ const recursiveExpand = async (
 
 export const EnvironmentActionsProvider = React.forwardRef<
   TreeEnvironmentRef,
-  PropsWithChildren<Record<string, unknown>>
+  PropsWithChildren<unknown>
 >((props, ref) => {
   const {
     onCollapseItem,

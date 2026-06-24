@@ -18,7 +18,7 @@ export const useTreeActions = () => React.useContext(EnvironmentActionsContext);
 
 export const TreeActionsProvider = React.forwardRef<
   TreeRef,
-  PropsWithChildren<Record<string, unknown>>
+  PropsWithChildren<unknown>
 >((props, ref) => {
   useTreeEnvironment();
   const tree = useTree();

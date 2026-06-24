@@ -57,35 +57,13 @@ export const useDraggingPosition = () => {
         return undefined;
       }
 
-      itemsHeightArray.current = computeItemHeightArray(treeId);
-
       const treeBb = containerRef.current.getBoundingClientRect();
 
       if (isOutsideOfContainer(e, treeBb)) {
         return undefined;
       }
 
-      const clientYRelativeToTreeTop = e.clientY - treeBb.top;
-      let cumulativeHeight = 0;
-      let linearIndex = 0;
-      let hoveringPosition = 0;
-
-      for (let i = 0; i < itemsHeightArray.current.length; i++) {
-        cumulativeHeight += itemsHeightArray.current[i];
-        if (clientYRelativeToTreeTop <= cumulativeHeight) {
-          linearIndex = i;
-          // Calculate hovering position as a fraction within the current item
-          const previousItemsHeight = cumulativeHeight - itemsHeightArray.current[i];
-          hoveringPosition = linearIndex + (clientYRelativeToTreeTop - previousItemsHeight) / itemsHeightArray.current[i];
-          break;
-        }
-      }
-
       const treeLinearItems = env.linearItems[treeId];
-      // const linearIndexx = Math.min(
-      //   Math.max(0, Math.floor(hoveringPosition)),
-      //   treeLinearItems.length - 1
-      // );
 
       if (treeLinearItems.length === 0) {
         return {
@@ -93,6 +71,49 @@ export const useDraggingPosition = () => {
           offset: 'bottom',
           indentation: 0,
         };
+      }
+
+      // Item heights are measured once when the drag starts
+      // (initiateDraggingPosition). Re-measuring here on every dragover would
+      // run a querySelectorAll over every row and read offsetHeight on each,
+      // forcing a synchronous layout reflow many times a second during a drag.
+      // The visible rows don't change mid-drag (there is no drag-to-expand), so
+      // we only re-measure if the row count no longer matches the cache — a
+      // cheap self-heal for the rare case where the tree mutates mid-drag.
+      if (itemsHeightArray.current.length !== treeLinearItems.length) {
+        itemsHeightArray.current = computeItemHeightArray(treeId);
+      }
+
+      // Walk the measured per-item heights (items can have different sizes)
+      // accumulating their heights until we pass the cursor's y position.
+      // This must stay in lockstep with treeLinearItems, so we never index
+      // past the last linear item even if the measured array is longer.
+      const heights = itemsHeightArray.current;
+      const lastIndex = treeLinearItems.length - 1;
+      const clientYRelativeToTreeTop = e.clientY - treeBb.top;
+      let cumulativeHeight = 0;
+      // Default to the very bottom: if the cursor is below every item (e.g. in
+      // the empty space under the last row) we want to track the last item's
+      // bottom edge, not snap back to the first item.
+      let linearIndex = lastIndex;
+      let hoveringPosition = treeLinearItems.length;
+
+      for (let i = 0; i <= lastIndex; i++) {
+        const itemHeightAtIndex = heights[i] || 0;
+        cumulativeHeight += itemHeightAtIndex;
+        if (clientYRelativeToTreeTop <= cumulativeHeight) {
+          linearIndex = i;
+          // Calculate hovering position as a fraction within the current item.
+          // Guard against zero-height rows to avoid a NaN position.
+          const previousItemsHeight = cumulativeHeight - itemHeightAtIndex;
+          const fraction =
+            itemHeightAtIndex > 0
+              ? (clientYRelativeToTreeTop - previousItemsHeight) /
+                itemHeightAtIndex
+              : 0;
+          hoveringPosition = linearIndex + fraction;
+          break;
+        }
       }
 
       const targetLinearItem = treeLinearItems[linearIndex];

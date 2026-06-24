@@ -10,7 +10,11 @@ export type EventHandler<EventPayload> =
 export class EventEmitter<EventPayload> {
   private handlerCount = 0;
 
-  private handlers: Array<EventHandler<EventPayload>> = [];
+  // Keyed by handler id so that `off`/`delete` can actually reclaim the slot.
+  // The previous implementation pushed into an array and only nulled entries
+  // on removal, so the backing array grew without bound across every
+  // subscribe/dispose cycle (e.g. each tree mount/unmount) — a memory leak.
+  private handlers = new Map<number, EventHandler<EventPayload>>();
 
   private options?: EventEmitterOptions<EventPayload>;
 
@@ -19,7 +23,7 @@ export class EventEmitter<EventPayload> {
   }
 
   public get numberOfHandlers() {
-    return this.handlers.filter(h => !!h).length;
+    return this.handlers.size;
   }
 
   public async emit(payload: EventPayload): Promise<void> {
@@ -27,23 +31,24 @@ export class EventEmitter<EventPayload> {
 
     this.options?.logger?.('emit', payload);
 
-    for (const handler of this.handlers) {
+    this.handlers.forEach(handler => {
       if (handler) {
         const res = handler(payload) as Promise<void>;
         if (typeof res?.then === 'function') {
           promises.push(res);
         }
       }
-    }
+    });
 
     await Promise.all(promises);
   }
 
   public on(handler: EventHandler<EventPayload>): number {
     this.options?.logger?.('on');
-    this.handlers.push(handler);
     // eslint-disable-next-line no-plusplus
-    return this.handlerCount++;
+    const handlerId = this.handlerCount++;
+    this.handlers.set(handlerId, handler);
+    return handlerId;
   }
 
   public off(handlerId: number) {
@@ -52,6 +57,6 @@ export class EventEmitter<EventPayload> {
 
   public delete(handlerId: number) {
     this.options?.logger?.('off');
-    this.handlers[handlerId] = null;
+    this.handlers.delete(handlerId);
   }
 }
