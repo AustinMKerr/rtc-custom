@@ -45,6 +45,16 @@ export const Tree = React.forwardRef<TreeRef, TreeProps>((props, ref) => {
     search
   );
 
+  // When an async `onSearch` handler is configured, feed this tree's search
+  // value into it (debounced inside the environment). Without `onSearch` this
+  // is a no-op and search stays purely client-side (backwards compatible).
+  useEffect(() => {
+    if (!environment.onSearch) {
+      return;
+    }
+    environment.runSearch(props.treeId, search);
+  }, [search, props.treeId, environment.onSearch, environment.runSearch]);
+
   const treeContextProps = useMemo<TreeContextProps>(
     () => ({
       treeId: props.treeId,

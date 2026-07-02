@@ -15,6 +15,7 @@ export const SearchInput: React.FC<{
   const environment = useTreeEnvironment();
   useViewState();
   const isActiveTree = environment.activeTreeId === treeId;
+  const isSearchLoading = environment.searchLoading?.[treeId] ?? false;
   const callSoon = useCallSoon();
 
   useSearchMatchFocus();
@@ -85,5 +86,6 @@ export const SearchInput: React.FC<{
         'data-rct-search-input': 'true',
       } as any),
     },
+    isSearchLoading,
   }) as any;
 };

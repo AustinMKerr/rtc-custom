@@ -15,6 +15,7 @@ import {
 import { buildTestTree } from './testTree';
 import {
   computeItemHeight,
+  computeItemHeightArray,
   isOutsideOfContainer,
 } from '../../src/controlledEnvironment/layoutUtils';
 import '@testing-library/jest-dom';
@@ -23,6 +24,16 @@ jest.mock('../../src/controlledEnvironment/layoutUtils');
 
 (computeItemHeight as jest.Mock).mockReturnValue(10);
 (isOutsideOfContainer as jest.Mock).mockReturnValue(false);
+// jsdom performs no layout, so offsetHeight is always 0. Emulate the real
+// per-item measurement (one entry per rendered item container) with a fixed
+// 10px row height, matching the coordinates TestUtil.dragOver generates.
+(computeItemHeightArray as jest.Mock).mockImplementation((treeId: string) =>
+  Array.from(
+    document.querySelectorAll(
+      `[data-rct-tree="${treeId}"] [data-rct-item-container="true"]`
+    )
+  ).map(() => 10)
+);
 
 export class TestUtil {
   private viewState: TreeViewState = {
