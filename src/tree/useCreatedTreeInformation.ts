@@ -11,12 +11,14 @@ export const useCreatedTreeInformation = (
   const environment = useTreeEnvironment();
   const dnd = useDragAndDrop();
   const selectedItems = environment.viewState[tree.treeId]?.selectedItems;
+  const isSearchLoading = environment.searchLoading?.[tree.treeId] ?? false;
   return useMemo<TreeInformation>(
     () => ({
       isFocused: environment.activeTreeId === tree.treeId,
       isRenaming: !!renamingItem,
       areItemsSelected: (selectedItems?.length ?? 0) > 0,
       isSearching: search !== null,
+      isSearchLoading,
       search,
       isProgrammaticallyDragging: dnd.isProgrammaticallyDragging ?? false,
       treeId: tree.treeId,
@@ -33,6 +35,7 @@ export const useCreatedTreeInformation = (
       renamingItem,
       selectedItems?.length,
       search,
+      isSearchLoading,
       dnd.isProgrammaticallyDragging,
     ]
   );

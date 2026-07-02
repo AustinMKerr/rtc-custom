@@ -28,7 +28,9 @@ export const DragBetweenLine: React.FC<{
         position: 'absolute',
         left: '0',
         right: '0',
-        top: `${itemsHeightArray.slice(0, draggingPosition?.linearIndex ?? 0).reduce((acc, height) => acc + height, 0)}px`,
+        top: `${(itemsHeightArray ?? [])
+          .slice(0, draggingPosition?.linearIndex ?? 0)
+          .reduce((acc, height) => acc + (height || 0), 0)}px`,
       }}
     >
       {renderers.renderDragBetweenLine({

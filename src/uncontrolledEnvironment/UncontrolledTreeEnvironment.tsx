@@ -125,6 +125,23 @@ export const UncontrolledTreeEnvironment = React.forwardRef<
         props.onRenameItem?.(item, name, treeId);
       }}
       onDrop={async (items, target) => {
+        // If any dragged item isn't owned by this environment's data provider
+        // (e.g. an async-search result dragged out of a search overlay, whose
+        // parent lives only in the transient overlay), skip the internal
+        // data-provider reparenting entirely and defer to the consumer's
+        // onDrop. This keeps result items draggable across trees without the
+        // default handler throwing on a "missing parent".
+        const hasForeignItem = items.some(
+          item =>
+            !Object.values(currentItems).some(potentialParent =>
+              potentialParent?.children?.includes?.(item.index)
+            )
+        );
+        if (hasForeignItem) {
+          props.onDrop?.(items, target);
+          return;
+        }
+
         const promises: Promise<void>[] = [];
         const itemsIndices = items.map(i => i.index);
         let itemsPriorToInsertion = 0;
