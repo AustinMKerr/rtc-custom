@@ -84,6 +84,9 @@ class Harness {
           ref={ref => {
             this.environmentRef = ref;
           }}
+          // Plain title renderer so search highlighting doesn't split titles
+          // into multiple spans (which would break getByText assertions).
+          renderItemTitle={props => props.title}
           renderItem={props => (
             <li
               {...props.context.itemContainerWithChildrenProps}
@@ -114,6 +117,17 @@ class Harness {
         </UncontrolledTreeEnvironment>
       );
     });
+    // The data provider loads items asynchronously; the Tree (and thus its ref)
+    // only mounts once its root item is available. Wait for that before driving
+    // the tree via its ref.
+    await act(async () => {
+      await new Promise(resolve => {
+        setTimeout(resolve, 10);
+      });
+    });
+    await waitFor(() =>
+      expect(this.renderResult!.getByText('Base A')).toBeInTheDocument()
+    );
     return this;
   }
 

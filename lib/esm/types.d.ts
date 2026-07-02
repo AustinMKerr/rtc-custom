@@ -53,8 +53,21 @@ export interface TreeInformation extends TreeConfiguration {
     isRenaming: boolean;
     isFocused: boolean;
     isSearching: boolean;
+    /**
+     * True while an async `onSearch` request for this tree is in flight. Always
+     * false when the `onSearch` environment prop is not used.
+     */
+    isSearchLoading: boolean;
     search: string | null;
     isProgrammaticallyDragging: boolean;
+}
+/**
+ * Normalized result of an async `onSearch` call for a single tree: the items
+ * to overlay keyed by index, plus the order in which to render them.
+ */
+export interface SearchResults<T = any> {
+    order: TreeItemIndex[];
+    items: Record<TreeItemIndex, TreeItem<T>>;
 }
 export interface TreeRenderProps<T = any, C extends string = never> {
     renderItem?: (props: {
@@ -103,6 +116,11 @@ export interface TreeRenderProps<T = any, C extends string = never> {
     }) => React.ReactElement | null;
     renderSearchInput?: (props: {
         inputProps: HTMLProps<HTMLInputElement>;
+        /**
+         * True while an async `onSearch` request is in flight — use it to render a
+         * loading spinner in the search box. Always false when `onSearch` is unused.
+         */
+        isSearchLoading?: boolean;
     }) => React.ReactElement | null;
     renderLiveDescriptorContainer?: (props: {
         children: React.ReactNode;
@@ -137,6 +155,34 @@ export interface TreeCapabilities<T = any, C extends string = never> {
     canRename?: boolean;
     autoFocus?: boolean;
     doesSearchMatchItem?: (search: string, item: TreeItem<T>, itemTitle: string) => boolean;
+    /**
+     * Optional async search hook. When provided, changing a tree's search value
+     * (by typing, or via the `setSearch` tree-ref action) invokes this callback,
+     * debounced by `searchDebounce` (default 250ms).
+     *
+     * Resolve it with the items that should be displayed as the tree's contents
+     * while the search is active — either a `Record<TreeItemIndex, TreeItem>` map
+     * or a `TreeItem[]` array (array order is preserved; map order follows
+     * `Object.values`). Those items become real, first-class tree items for the
+     * duration of the search: they are selectable, focusable and draggable
+     * (including dragging out into other trees), and nothing needs to be
+     * pre-loaded. Mixed results (e.g. matching categories *and* matching
+     * articles) are supported — return them all in one flat list.
+     *
+     * Resolve with an empty array to render a "no results" (empty) tree. Resolve
+     * with `null`, `undefined` or `void` to leave the normal data-provider view
+     * in place and fall back to the client-side `doesSearchMatchItem` matcher.
+     *
+     * When this prop is not set, search behaves exactly as before — purely
+     * client-side highlighting via `doesSearchMatchItem`. This makes `onSearch`
+     * fully additive and backwards compatible.
+     */
+    onSearch?: (search: string | null, treeId: string) => Promise<Record<TreeItemIndex, TreeItem<T>> | TreeItem<T>[] | void>;
+    /**
+     * Debounce, in milliseconds, applied before `onSearch` is invoked while the
+     * user types. Defaults to 250ms. Has no effect unless `onSearch` is set.
+     */
+    searchDebounce?: number;
     showLiveDescription?: boolean;
     shouldRenderChildren?: (item: TreeItem<T>, context: TreeItemRenderContext<C>) => boolean;
     /**
@@ -226,6 +272,21 @@ export interface TreeEnvironmentContextProps<T = any, C extends string = never> 
     treeIds: string[];
     trees: Record<string, TreeConfiguration>;
     linearItems: Record<string, LinearItem[]>;
+    /**
+     * Active async-search overlay per tree (see the `onSearch` prop), or `null`
+     * for trees whose search is inactive. When a tree has an entry here, its
+     * rendered contents and linear items come from the overlay instead of the
+     * data provider.
+     */
+    searchResults: Record<string, SearchResults | null>;
+    /** True per tree while an async `onSearch` request is in flight. */
+    searchLoading: Record<string, boolean>;
+    /**
+     * Runs (debounced) the async search for a tree, or clears it when the search
+     * is `null`/empty. Called internally when a tree's search value changes; only
+     * does anything when the `onSearch` prop is set.
+     */
+    runSearch: (treeId: string, search: string | null) => void;
 }
 export interface DragAndDropContextProps<T = any> {
     onStartDraggingItems: (items: TreeItem<T>[], treeId: string) => void;

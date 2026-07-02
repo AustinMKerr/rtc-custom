@@ -3,8 +3,7 @@
   "compilerOptions": {
     "outDir": "lib/cjs",
     "noImplicitAny": false,
-    "skipLibCheck": true,
-    "types": []
+    "skipLibCheck": true
   },
   "exclude": ["src/stories", "**/*.spec.*", "test"],
   "include": ["src"]
